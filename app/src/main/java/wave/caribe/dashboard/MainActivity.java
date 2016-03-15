@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mapView = (MapView) findViewById(R.id.map);
         mapView.setAccessToken(getString(R.string.mapbox_id));
 
-        mapView.setStyleUrl(Style.SATELLITE_STREETS);
+        mapView.setStyleUrl("mapbox://styles/anthill/ciltunikq00eya2kq6s5nk85k");
         mapView.setCenterCoordinate(new LatLng(default_lat, default_lon));
         mapView.setZoomLevel(DEFAULT_ZOOM);
         mapView.setRotateEnabled(false);

@@ -30,3 +30,9 @@ proguard/
 
 # Android Studio captures folder
 captures/
+
+
+android-app.iml
+.idea/*
+caribe-android-dashboard.iml
+app/app.iml
