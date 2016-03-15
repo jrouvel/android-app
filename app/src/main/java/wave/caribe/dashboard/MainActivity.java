@@ -166,9 +166,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         // Build the MQTT Client
         Log.i(TAG, "Creating MQTT Client");
-        mMQTTClient = new MQTTClient(MainActivity.this);
+        mMQTTClient = new MQTTClient(this);
 
-        Log.i(TAG, "DONE");
+        Log.i(TAG, "-------------- DONE --------------");
 
     }
 

@@ -133,26 +133,22 @@ public class MQTTClient implements MqttCallback {
     }
 
     public void reconnect(CallbackInterface ci) {
-        if (mClient != null) {
-            try {
-                mClient.disconnect();
-                mClient.connect();
-                subscribeToAll(ci);
-            } catch (MqttException e) {
-                Log.i(TAG, "Impossible to connect to the broker. Please check the settings and that you have an available internet connection, and retry.");
-                e.printStackTrace();
-            } catch (Exception e) {
-                Log.i(TAG, "Problem connecting. Please check the settings, and retry.");
-                e.printStackTrace();
-            }
+        try {
+            disconnect();
+            connect();
+            subscribeToAll(ci);
+        } catch (MqttException e) {
+            Log.i(TAG, "Impossible to connect to the broker. Please check the settings and that you have an available internet connection, and retry.");
+            e.printStackTrace();
+        } catch (Exception e) {
+            Log.i(TAG, "Problem connecting. Please check the settings, and retry.");
+            e.printStackTrace();
         }
     }
 
     public void disconnect() {
         // disconnect
         try {
-            // wait to ensure subscribed messages are delivered
-            Thread.sleep(1000);
             mClient.disconnect();
         } catch (Exception e) {
             e.printStackTrace();

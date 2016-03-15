@@ -161,16 +161,6 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="preferences.xml" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/app/src/main/res/xml/preferences.xml">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="23" column="52" selection-start-line="23" selection-start-column="52" selection-end-line="23" selection-end-column="52" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="SettingsFragment.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/SettingsFragment.java">
           <provider selected="true" editor-type-id="text-editor">
@@ -181,10 +171,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="RegistrationIntentService.java" pinned="false" current-in-tab="true">
+      <file leaf-file-name="RegistrationIntentService.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/services/RegistrationIntentService.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="1.4578097">
+            <state vertical-scroll-proportion="0.0">
               <caret line="108" column="70" selection-start-line="108" selection-start-column="70" selection-end-line="108" selection-end-column="70" />
               <folding>
                 <element signature="imports" expanded="true" />
@@ -207,11 +197,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="MQTTClient.java" pinned="false" current-in-tab="false">
+      <file leaf-file-name="MQTTClient.java" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/MQTTClient.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="154" column="26" selection-start-line="154" selection-start-column="26" selection-end-line="154" selection-end-column="26" />
+            <state vertical-scroll-proportion="0.19210054">
+              <caret line="133" column="0" selection-start-line="133" selection-start-column="0" selection-end-line="133" selection-end-column="0" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#2012#2013#0" expanded="true" />
@@ -225,16 +215,16 @@
         <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/MainActivity.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="266" column="37" selection-start-line="266" selection-start-column="37" selection-end-line="266" selection-end-column="37" />
+              <caret line="271" column="22" selection-start-line="271" selection-start-column="22" selection-end-line="271" selection-end-column="22" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#4384#4413#0" expanded="true" />
                 <element signature="e#5057#5505#0" expanded="true" />
                 <element signature="e#5504#5505#0" expanded="true" />
-                <element signature="e#9088#9402#0" expanded="true" />
-                <element signature="e#9229#9376#0" expanded="true" />
-                <element signature="e#9375#9376#0" expanded="true" />
-                <element signature="e#9401#9402#0" expanded="true" />
+                <element signature="e#9105#9419#0" expanded="true" />
+                <element signature="e#9246#9393#0" expanded="true" />
+                <element signature="e#9392#9393#0" expanded="true" />
+                <element signature="e#9418#9419#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -2661,7 +2651,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="4" y="23" width="1676" height="1027" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -2793,10 +2783,10 @@
             <element signature="e#4384#4413#0" expanded="true" />
             <element signature="e#5057#5505#0" expanded="true" />
             <element signature="e#5504#5505#0" expanded="true" />
-            <element signature="e#9088#9402#0" expanded="true" />
-            <element signature="e#9229#9376#0" expanded="true" />
-            <element signature="e#9375#9376#0" expanded="true" />
-            <element signature="e#9401#9402#0" expanded="true" />
+            <element signature="e#9105#9419#0" expanded="true" />
+            <element signature="e#9246#9393#0" expanded="true" />
+            <element signature="e#9392#9393#0" expanded="true" />
+            <element signature="e#9418#9419#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -2931,18 +2921,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="46" column="44" selection-start-line="46" selection-start-column="44" selection-end-line="46" selection-end-column="44" />
-          <folding>
-            <element signature="e#952#970#0" expanded="true" />
-            <element signature="e#2524#2542#0" expanded="true" />
-            <element signature="e#3089#3107#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/services/CWInstanceIDListenerService.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.16157989">
@@ -2993,11 +2971,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/res/xml/preferences.xml">
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/services/CWGcmListenerService.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="23" column="52" selection-start-line="23" selection-start-column="52" selection-end-line="23" selection-end-column="52" />
-          <folding />
+          <caret line="19" column="42" selection-start-line="19" selection-start-column="42" selection-end-line="19" selection-end-column="42" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -3009,53 +2989,63 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/services/RegistrationIntentService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="108" column="70" selection-start-line="108" selection-start-column="70" selection-end-line="108" selection-end-column="70" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#976#977#0" expanded="true" />
+            <element signature="e#1002#1003#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/res/xml/preferences.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.53859967">
+          <caret line="23" column="52" selection-start-line="23" selection-start-column="52" selection-end-line="23" selection-end-column="52" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/app/src/main/AndroidManifest.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="46" column="44" selection-start-line="46" selection-start-column="44" selection-end-line="46" selection-end-column="44" />
+          <folding>
+            <element signature="e#952#970#0" expanded="true" />
+            <element signature="e#2524#2542#0" expanded="true" />
+            <element signature="e#3089#3107#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/MainActivity.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="266" column="37" selection-start-line="266" selection-start-column="37" selection-end-line="266" selection-end-column="37" />
+          <caret line="271" column="22" selection-start-line="271" selection-start-column="22" selection-end-line="271" selection-end-column="22" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#4384#4413#0" expanded="true" />
             <element signature="e#5057#5505#0" expanded="true" />
             <element signature="e#5504#5505#0" expanded="true" />
-            <element signature="e#9088#9402#0" expanded="true" />
-            <element signature="e#9229#9376#0" expanded="true" />
-            <element signature="e#9375#9376#0" expanded="true" />
-            <element signature="e#9401#9402#0" expanded="true" />
+            <element signature="e#9105#9419#0" expanded="true" />
+            <element signature="e#9246#9393#0" expanded="true" />
+            <element signature="e#9392#9393#0" expanded="true" />
+            <element signature="e#9418#9419#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/MQTTClient.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="154" column="26" selection-start-line="154" selection-start-column="26" selection-end-line="154" selection-end-column="26" />
+        <state vertical-scroll-proportion="0.19210054">
+          <caret line="133" column="0" selection-start-line="133" selection-start-column="0" selection-end-line="133" selection-end-column="0" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#2012#2013#0" expanded="true" />
             <element signature="e#2059#2060#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/services/CWGcmListenerService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="19" column="42" selection-start-line="19" selection-start-column="42" selection-end-line="19" selection-end-column="42" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/app/src/main/java/wave/caribe/dashboard/services/RegistrationIntentService.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="1.4578097">
-          <caret line="108" column="70" selection-start-line="108" selection-start-column="70" selection-end-line="108" selection-end-column="70" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#976#977#0" expanded="true" />
-            <element signature="e#1002#1003#0" expanded="true" />
           </folding>
         </state>
       </provider>
