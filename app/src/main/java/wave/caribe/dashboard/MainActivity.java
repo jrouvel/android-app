@@ -38,6 +38,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
@@ -78,6 +80,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private MapView mapView = null;
     private TextView msg;
     private LinearLayout msgbox;
+
+    // Timers for display
+    private Timer resetMarkerTimer = new Timer();
+    private Timer resetAlertTimer = new Timer();
+
+    private static final int WARNING_DISPLAY_TIME_IN_S = 2;
+    private static final int ALERT_DISPLAY_TIME_IN_S = 120;
 
     private ArrayList<Sensor> sensors = new ArrayList<>();
     private ArrayList<Marker> listOfMarkers = new ArrayList<>();
@@ -239,8 +248,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mapView.removeAllAnnotations();
         listOfMarkers.clear();
 
-        msg.setText(R.string.no_event);
-        msgbox.setBackgroundColor(getResources().getColor(R.color.safe));
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                msg.setText(R.string.no_event);
+                msg.setTextColor(getResources().getColor(R.color.black));
+                msgbox.setBackgroundColor(getResources().getColor(R.color.safe));
+            }
+        });
         
         IconFactory mIconFactory = IconFactory.getInstance(this);
         Drawable mIconDrawableDisabled = ContextCompat.getDrawable(this, R.drawable.map_grey);
@@ -304,6 +319,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     public void reconnect()
     {
+
+        // In case of reconnection, make sure that everything comes
+        // back to normal before reconnecting
+        resetStillMarkers();
+
         Handler handler = new Handler();
         Runnable r = new Runnable() {
             @Override
@@ -314,7 +334,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                         updateMap(uid, measurement);
                     }
                     public void alert(JSONObject alert) {
-                        showAlert();
+                        showAlert(alert);
                     }
                 });
             }
@@ -326,13 +346,17 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     public void updateMap(String uid, JSONArray measurement)
     {
+        // A new event is coming
+        resetMarkerTimer.cancel();
+
         updateLastActive();
+
         Log.i(TAG, "Updating map.");
 
         final ArrayList<String> places = new ArrayList<>();
 
         IconFactory mIconFactory = IconFactory.getInstance(this);
-        Drawable mIconDrawableDanger = ContextCompat.getDrawable(this, R.drawable.map_red);
+        Drawable mIconDrawableDanger = ContextCompat.getDrawable(this, R.drawable.map_yellow);
         Icon danger_icon = mIconFactory.fromDrawable(mIconDrawableDanger);
 
         for (final Marker marker : listOfMarkers) {
@@ -356,22 +380,51 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 msgbox.setBackgroundColor(getResources().getColor(R.color.warning));
             }
         });
+
+
         Log.i(TAG, "Map updated.");
 
         // Run for 2 seconds
-        try {
-            Thread.sleep(2000);
-        } catch (Exception e){
-
-        }
-
-        resetStillMarkers();
+        resetMarkerTimer = new Timer();
+        resetMarkerTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+               resetStillMarkers();
+            }
+        }, WARNING_DISPLAY_TIME_IN_S*1000);
 
     }
 
-    public void showAlert()
+    public void showAlert(JSONObject alert)
     {
+        String tmp = "General Alert — General Alert";
         updateLastActive();
+
+        try {
+            tmp = alert.get("message").toString();
+        } catch(Exception e) {
+            tmp = "";
+        }
+
+        final String message = tmp;
+        // Update msg box with alert
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                msg.setText(message);
+                msg.setTextColor(getResources().getColor(R.color.white));
+                msgbox.setBackgroundColor(getResources().getColor(R.color.danger));
+            }
+        });
+
+        // Run for 2 seconds
+        resetAlertTimer = new Timer();
+        resetAlertTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                resetStillMarkers();
+            }
+        }, ALERT_DISPLAY_TIME_IN_S*1000);
     }
 
     public void updateLastActive()

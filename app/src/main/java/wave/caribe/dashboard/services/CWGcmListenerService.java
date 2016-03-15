@@ -55,6 +55,7 @@ public class CWGcmListenerService extends GcmListenerService {
                 .setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle(getString(R.string.alert_title))
                 .setContentText(message)
+                .setColor(getResources().getColor(R.color.primary))
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);

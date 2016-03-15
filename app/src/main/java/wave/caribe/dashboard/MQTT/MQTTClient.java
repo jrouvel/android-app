@@ -89,7 +89,8 @@ public class MQTTClient implements MqttCallback {
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
         if(mCallbackInterface != null) {
-            if (topic.equals("alert")) {
+            if (topic.equals("alert/general")) {
+                Log.i(TAG, "General Alert : " + new String(message.getPayload()));
                 mCallbackInterface.alert(new JSONObject(new String(message.getPayload())));
             } else if (topic.startsWith("measurement/")) {
                 StringTokenizer tokens = new StringTokenizer(topic, "/");

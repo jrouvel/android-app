@@ -41,7 +41,7 @@
         <EditTextPreference
             android:key="pref_alert"
             android:summary="The alert endpoint"
-            android:title="Sensor endpoint"
+            android:title="General alert endpoint"
             android:defaultValue="alert/general" />
     </PreferenceCategory>
 
