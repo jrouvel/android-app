@@ -1,7 +1,7 @@
 <resources>
-    <string name="google_app_id">553667159913</string>
     <string name="mapbox_id">pk.eyJ1IjoiYW50aGlsbCIsImEiOiJjaWxzam5veWcwMDFvdHlrcnVpZ3Q5Ym1zIn0.NeuQS_o8hts3unJRXVOCUA</string>
     <string name="app_name">Caribe Wave Dashboard</string>
     <string name="action_retry">Reconnect</string>
     <string name="action_settings">Settings</string>
+    <string name="action_validate">Validate</string>
 </resources>

@@ -1,26 +1,28 @@
 package wave.caribe.dashboard;
 
 /**
- * CAribe Wave
+ * Caribe Wave
  * Created by tchap on 28/12/15.
  */
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.util.Log;
+import android.widget.Toast;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttTopic;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 import java.util.StringTokenizer;
 
 public class MQTTClient implements MqttCallback {
+
+    private static final String TAG = "CW:MQTT BROKER";
 
     MqttClient mClient;
     MqttConnectOptions connOpt;
@@ -28,10 +30,13 @@ public class MQTTClient implements MqttCallback {
 
     SharedPreferences sharedPref;
 
+    // Used to generate a unique ID for the MQTT connection
     private String android_id;
 
     public MQTTClient(MainActivity activity) {
         sharedPref = PreferenceManager.getDefaultSharedPreferences(activity);
+
+        // Create the unique ID
         android_id = "android_" + Settings.Secure.getString(activity.getContentResolver(),
                 Settings.Secure.ANDROID_ID);
     }
@@ -44,7 +49,7 @@ public class MQTTClient implements MqttCallback {
      */
     @Override
     public void connectionLost(Throwable t) {
-        System.out.println("Connection lost!");
+        Log.i(TAG,"Connection LOST, reconnecting");
         // code to reconnect to the broker :
         try {
             connect();
@@ -63,11 +68,7 @@ public class MQTTClient implements MqttCallback {
      */
     @Override
     public void deliveryComplete(IMqttDeliveryToken token){
-        try {
-            System.out.println("Delivery complete");
-        } catch (Exception e){
-            e.printStackTrace();
-        }
+        Log.i(TAG, "Delivery complete");
     }
 
     /**
@@ -79,14 +80,13 @@ public class MQTTClient implements MqttCallback {
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
 
-        System.out.println("-------------------------------------------------");
-        System.out.println("| Topic:" + topic);
-        System.out.println("| Message: " + new String(message.getPayload()));
-        System.out.println("-------------------------------------------------");
+        Log.i(TAG, "-------------------------------------------------");
+        Log.i(TAG, "| Topic:" + topic);
+        Log.i(TAG, "| Message: " + new String(message.getPayload()));
+        Log.i(TAG, "-------------------------------------------------");
 
         // id=%s&w=%d&t=%.2f&h=%d
         StringTokenizer tokens = new StringTokenizer(new String(message.getPayload()), "&");
-
 
         if(mCallbackInterface != null) {
             mCallbackInterface.execute();
@@ -128,15 +128,31 @@ public class MQTTClient implements MqttCallback {
         mClient = new MqttClient(sharedPref.getString("pref_url", "") + ":" + sharedPref.getString("pref_port", "1883"), sharedPref.getString("pref_client", ""), new MemoryPersistence());
         mClient.setCallback(this);
         mClient.connect(connOpt);
-        System.out.println("Connected to " + sharedPref.getString("pref_url", ""));
+        Log.i(TAG, "Connected to " + sharedPref.getString("pref_url", ""));
 
+    }
+
+    public void reconnect(CallbackInterface ci) {
+        if (mClient != null) {
+            try {
+                mClient.disconnect();
+                mClient.connect();
+                subscribeToAll(ci);
+            } catch (MqttException e) {
+                Log.i(TAG, "Impossible to connect to the broker. Please check the settings and that you have an available internet connection, and retry.");
+                e.printStackTrace();
+            } catch (Exception e) {
+                Log.i(TAG, "Problem connecting. Please check the settings, and retry.");
+                e.printStackTrace();
+            }
+        }
     }
 
     public void disconnect() {
         // disconnect
         try {
             // wait to ensure subscribed messages are delivered
-            Thread.sleep(5000);
+            Thread.sleep(1000);
             mClient.disconnect();
         } catch (Exception e) {
             e.printStackTrace();

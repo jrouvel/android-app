@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -23,6 +24,7 @@ import android.support.design.widget.FloatingActionButton;
 
 
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
@@ -37,15 +39,21 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.constants.MyBearingTracking;
 import com.mapbox.mapboxsdk.constants.MyLocationTracking;
 import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.views.MapView;
 
+import wave.caribe.dashboard.services.RegistrationIntentService;
+
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+
+    private static final String TAG = "CW:MAIN ACTIVITY";
 
     private MQTTClient mMQTTClient;
     private GoogleApiClient mGoogleApiClient;
@@ -54,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     private final int REQUEST_LOCATION = 1;
     private final String LOCATION_FILTER_KEY = "location.request.caribe.wave";
+
 
     private MapView mapView = null;
 
@@ -65,6 +74,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private Date mLastActive;
 
     private SharedPreferences sharedPref;
+
+    // GCM
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    public static final String SENT_TOKEN_TO_SERVER = "sentTokenToServer";
+    public static final String REGISTRATION_COMPLETE = "registrationComplete";
 
     // Do we have location permissions or not ?
     public boolean isLocationPermissionGranted() {
@@ -87,9 +101,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         // Request fine location (Android > 6.0)
         if (!isLocationPermissionGranted()) {
+            Log.i(TAG, "Asking for permissions (Location)");
             askPermissionForLocation();
         }
 
+        // Check if we have Play Services for GCM
+        if (checkPlayServices()) {
+            Log.i(TAG, "Play Services are NOT ok");
+            // Start IntentService to register this application with GCM.
+            Intent intent = new Intent(this, RegistrationIntentService.class);
+            startService(intent);
+        } else {
+            Log.i(TAG, "Play Services are ok");
+        }
+
+        // Instantiate map
+        Log.i(TAG, "Instantiating map");
         mapView = (MapView) findViewById(R.id.map);
         mapView.setAccessToken(getString(R.string.mapbox_id));
 
@@ -101,12 +128,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (this.isLocationPermissionGranted()) {
             //noinspection ResourceType
             mapView.setMyLocationEnabled(true);
-            try {
-                mapView.setMyLocationTrackingMode(MyLocationTracking.TRACKING_NONE);
-                mapView.setMyBearingTrackingMode(MyBearingTracking.GPS);
-            } catch (SecurityException e) {
+            //noinspection ResourceType
+            mapView.setMyLocationTrackingMode(MyLocationTracking.TRACKING_NONE);
+            //noinspection ResourceType
+            mapView.setMyBearingTrackingMode(MyBearingTracking.GPS);
 
-            }
 
             mapView.setOnMyLocationChangeListener(new MapView.OnMyLocationChangeListener() {
                 @Override
@@ -118,7 +144,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     }
                 }
             });
-
 
             FloatingActionButton mLocationButton = (FloatingActionButton) findViewById(R.id.location);
             mLocationButton.setOnClickListener(new View.OnClickListener() {
@@ -132,19 +157,33 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
 
         // Build the Google API client for location requests
+        Log.i(TAG, "Building Google API Client");
         buildGoogleApiClient();
 
+        // Retrieving sensor list
+        Log.i(TAG, "Retrieving Sensor list");
+        getSensorList();
+
         // Build the MQTT Client
-        mMQTTClient = new MQTTClient(this);
+        Log.i(TAG, "Creating MQTT Client");
+        mMQTTClient = new MQTTClient(MainActivity.this);
+
+        Log.i(TAG, "DONE");
 
     }
 
     private JSONObject getSensorList() {
 
         JSONObject result = null;
+        String api_url = sharedPref.getString("pref_sensor_api", "");
+
+        if (api_url.equals("")) {
+            Log.i(TAG, "Bad sensor list API");
+            return null;
+        }
 
         try {
-            URL url = new URL(sharedPref.getString("pref_api", "http://test.com"));
+            URL url = new URL(api_url);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             try {
                 InputStream in = new BufferedInputStream(urlConnection.getInputStream());
@@ -157,6 +196,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     responseStrBuilder.append(inputStr);
 
                 result = new JSONObject(responseStrBuilder.toString());
+                Log.i(TAG, "Got result from Sensor list API");
 
             } finally {
                 urlConnection.disconnect();
@@ -166,6 +206,15 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
 
         return result;
+    }
+
+    private void updateMarkers(ArrayList sensors) {
+
+        mapView.addMarker(new MarkerOptions()
+                .position(new LatLng(default_lat, default_lon))
+                .title("Hello World!")
+                .snippet("Welcome to my marker."));
+
     }
 
     private synchronized void buildGoogleApiClient() {
@@ -195,19 +244,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.action_retry:
-                try {
-                    mMQTTClient.disconnect();
-                    mMQTTClient.connect();
-                    mMQTTClient.subscribeToAll(new CallbackInterface() {
-                        public void execute() {
-                            updateData();
-                        }
-                    });
-
-
-                } catch (MqttException e) {
-                    e.printStackTrace();
-                }
+                reconnect();
                 return true;
             case R.id.action_settings:
                 getFragmentManager().beginTransaction()
@@ -220,12 +257,27 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
+    public void reconnect(){
+        Handler handler = new Handler();
+        Runnable r = new Runnable() {
+            public void run() {
+                Log.i(TAG, "Connecting MQTT Client");
+                mMQTTClient.reconnect(new CallbackInterface() {
+                    public void execute() {
+                        updateData();
+                    }
+                });
+            }
+        };
+        handler.post(r);
+    }
+
     public void updateData() {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mLastActive = new Date();
-                System.out.println("Updated ! at " + mLastActive.toString());
+            mLastActive = new Date();
+            Log.i(TAG, "DATA UPDATED ! at " + mLastActive.toString());
             }
         });
     }
@@ -248,22 +300,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onResume() {
         super.onResume();
         mapView.onResume();
-        if (mMQTTClient != null && !mMQTTClient.isConnected()) {
-            try {
-                mMQTTClient.connect();
-                mMQTTClient.subscribeToAll(new CallbackInterface() {
-                    public void execute() {
-                        updateData();
-                    }
-                });
-            } catch (MqttException e) {
-                Toast.makeText(this,"Impossible to connect to the broker. Please check the settings and that you have an available internet connection, and retry.", Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }  catch (Exception e) {
-                Toast.makeText(this, "Problem connecting. Please check the settings, and retry.", Toast.LENGTH_LONG).show();
-                e.printStackTrace();
-            }
-        }
+        reconnect(); // Reconnect MQTT
+
     }
 
 
@@ -347,7 +385,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         // We can set the flag back to true since this method is only
         // called when we have a new "real" location
         mCurrentLocation = location;
-        Log.d("MAIN LOCATION UPDATE", mCurrentLocation.toString());
+        //Log.i("  MAIN LOCATION UPDATE", mCurrentLocation.toString());
 
         Intent intent = new Intent(LOCATION_FILTER_KEY);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -390,4 +428,25 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         // onConnectionFailed.
     }
 
+    /**
+     * Check the device to make sure it has the Google Play Services APK. If
+     * it doesn't, display a dialog that allows users to download the APK from
+     * the Google Play Store or enable it in the device's system settings.
+     */
+    private boolean checkPlayServices() {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            Log.i(TAG, "GCM Error : " + resultCode);
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(this, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST)
+                        .show();
+            } else {
+                Log.i(TAG, "GCM Error : This device is not supported.");
+                finish();
+            }
+            return false;
+        }
+        return true;
+    }
 }

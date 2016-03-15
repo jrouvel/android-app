@@ -5,8 +5,11 @@ import android.preference.PreferenceFragment;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+
+import org.eclipse.paho.client.mqttv3.MqttException;
 
 /**
  * Caribe Wave
@@ -32,7 +35,23 @@ public class SettingsFragment extends PreferenceFragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        menu.clear();
         super.onCreateOptionsMenu(menu, inflater);
+        menu.clear();
+        inflater.inflate(R.menu.settings, menu);
     }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case R.id.action_validate:
+                getFragmentManager().popBackStack();
+                getFragmentManager().beginTransaction().commit();
+                ((MainActivity) getActivity()).reconnect();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
 }
