@@ -12,24 +12,32 @@ import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
 
-import java.util.Set;
+import java.util.Random;
 
 import wave.caribe.dashboard.MainActivity;
 import wave.caribe.dashboard.R;
+
+/**
+ * Caribe Wave Android App
+ *
+ * GCM Listener for notifications
+ *
+ * Created by tchap on 14/03/16.
+ */
 
 public class CWGcmListenerService extends GcmListenerService {
 
     private static final String TAG = "CW:GCM LISTENER SERVICE";
 
+    private Random rand = new Random();
+
     @Override
     public void onMessageReceived(String from, Bundle data) {
         String message = data.getString("default");
         Log.i(TAG, "GCM Message received : " + message);
-        // [START_EXCLUDE]
+
         sendNotification(message);
-        // [END_EXCLUDE]
     }
-    // [END receive_message]
 
     /**
      * Create and show a simple notification containing the received GCM message.
@@ -54,6 +62,6 @@ public class CWGcmListenerService extends GcmListenerService {
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+        notificationManager.notify(rand.nextInt(), notificationBuilder.build());
     }
 }

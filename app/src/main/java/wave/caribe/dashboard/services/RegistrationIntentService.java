@@ -11,7 +11,6 @@ import com.google.android.gms.gcm.GcmPubSub;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.iid.InstanceID;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,11 +23,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 
 import wave.caribe.dashboard.MainActivity;
 import wave.caribe.dashboard.R;
+
+
+/**
+ * Caribe Wave Android App
+ *
+ * GCM Service for registration
+ *
+ * Created by tchap on 14/03/16.
+ */
 
 public class RegistrationIntentService extends IntentService {
 
@@ -59,14 +65,14 @@ public class RegistrationIntentService extends IntentService {
             Log.i(TAG, "GCM Registration Token: " + token);
 
             boolean reg_sent = sharedPref.getBoolean(MainActivity.SENT_TOKEN_TO_SERVER, false);
-            Log.i(TAG, "Token already sent ? " + reg_sent);
+            Log.i(TAG, reg_sent?"Token already sent, Subscribing.":"Token not sent, registering first.");
             if (!reg_sent) {
                 boolean result = sendRegistrationToServer(token);
 
                 // You should store a boolean that indicates whether the generated token has been
                 // sent to your server. If the boolean is false, send the token to your server,
                 // otherwise your server should have already received the token.
-                if (result == true) {
+                if (result) {
                     sharedPref.edit().putBoolean(MainActivity.SENT_TOKEN_TO_SERVER, true).apply();
                 }
 
@@ -77,7 +83,7 @@ public class RegistrationIntentService extends IntentService {
 
             // [END register_for_gcm]
         } catch (Exception e) {
-            Log.i(TAG, "Failed to complete token refresh", e);
+            Log.i(TAG, "Failed to complete token refresh : ", e);
             // If an exception happens while fetching the new token or updating our registration data
             // on a third-party server, this ensures that we'll attempt the update at a later time.
             sharedPref.edit().putBoolean(MainActivity.SENT_TOKEN_TO_SERVER, false).apply();
@@ -108,9 +114,9 @@ public class RegistrationIntentService extends IntentService {
 
         InputStream inputStream = null;
         HttpURLConnection urlConnection = null;
-        Integer result = 0;
         try {
-                /* forming th java.net.URL object */
+
+            /* forming th java.net.URL object */
             URL url = new URL(reg_url);
             DataOutputStream printout;
             DataInputStream input;
@@ -126,18 +132,18 @@ public class RegistrationIntentService extends IntentService {
             urlConnection.setRequestMethod("POST");
             urlConnection.setRequestProperty("charset", "utf-8");
             urlConnection.connect();
-            //Create JSONObject here
+            //Create JSONObject
             JSONObject jsonParam = new JSONObject();
             jsonParam.put("token", token);
 
             printout = new DataOutputStream(urlConnection.getOutputStream ());
             printout.writeBytes(jsonParam.toString());
-            printout.flush ();
-            printout.close ();
+            printout.flush();
+            printout.close();
 
             int statusCode = urlConnection.getResponseCode();
 
-                /* 200 represents HTTP OK */
+            /* 200 represents HTTP OK */
             if (statusCode ==  200) {
                 inputStream = new BufferedInputStream(urlConnection.getInputStream());
                 String response = convertInputStreamToString(inputStream);

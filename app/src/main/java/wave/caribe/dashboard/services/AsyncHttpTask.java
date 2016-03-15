@@ -15,8 +15,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * caribe-android-dashboard
- * Created by tchap on 15/03/16.
+ * Caribe Wave Android App
+ *
+ * Helper class for Http Async tasks
+ *
+ * Created by tchap on 14/03/16.
  */
 public class AsyncHttpTask extends AsyncTask<String, Void, Integer> {
 
@@ -25,7 +28,7 @@ public class AsyncHttpTask extends AsyncTask<String, Void, Integer> {
     private JSONArray sensors = null;
 
     public interface TaskListener {
-        public void onFinished(JSONArray result);
+        void onFinished(JSONArray result);
     }
 
     // This is the reference to the associated listener
@@ -39,52 +42,45 @@ public class AsyncHttpTask extends AsyncTask<String, Void, Integer> {
 
     @Override
     protected Integer doInBackground(String ... params) {
-        InputStream inputStream = null;
-        HttpURLConnection urlConnection = null;
+        InputStream inputStream;
+        HttpURLConnection urlConnection;
         Integer result = 0;
         try {
-                /* forming th java.net.URL object */
             URL url = new URL(params[0]);
             urlConnection = (HttpURLConnection) url.openConnection();
 
-                 /* optional request header */
             urlConnection.setRequestProperty("Content-Type", "application/json");
-
-                /* optional request header */
             urlConnection.setRequestProperty("Accept", "application/json");
-
-                /* for Get request */
             urlConnection.setRequestMethod("GET");
             int statusCode = urlConnection.getResponseCode();
 
-                /* 200 represents HTTP OK */
+            /* 200 represents HTTP OK */
             if (statusCode ==  200) {
                 inputStream = new BufferedInputStream(urlConnection.getInputStream());
                 String response = convertInputStreamToString(inputStream);
                 parseResult(response);
-                result = 1; // Successful
-            }else{
-                result = 0; //"Failed to fetch data!";
+                result = 1;
+            } else {
+                result = 0;
             }
         } catch (Exception e) {
             Log.d(TAG, e.getLocalizedMessage());
         }
-        return result; //"Failed to fetch data!";
+        return result;
     }
 
     @Override
     protected void onPostExecute(Integer result) {
         /* Download complete. Lets call mainactivity */
-        if(result == 1){
+        if (result == 1){
             super.onPostExecute(result);
 
             // In onPostExecute we check if the listener is valid
             if(this.taskListener != null) {
-
                 // And if it is we call the callback function on it.
                 this.taskListener.onFinished(sensors);
             }
-        }else{
+        } else {
             Log.e(TAG, "Failed to fetch data!");
         }
     }

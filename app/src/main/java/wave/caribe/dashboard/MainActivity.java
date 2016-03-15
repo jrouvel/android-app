@@ -45,9 +45,19 @@ import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.views.MapView;
 
+import wave.caribe.dashboard.MQTT.MQTTCallbackInterface;
+import wave.caribe.dashboard.MQTT.MQTTClient;
 import wave.caribe.dashboard.services.AsyncHttpTask;
 import wave.caribe.dashboard.services.RegistrationIntentService;
 
+
+/**
+ * Caribe Wave Android App
+ *
+ * Main entry point
+ *
+ * Created by tchap on 14/03/16.
+ */
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private static final String TAG = "CW:MAIN ACTIVITY";
@@ -60,10 +70,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private final int REQUEST_LOCATION = 1;
     private final String LOCATION_FILTER_KEY = "location.request.caribe.wave";
 
-
     private MapView mapView = null;
 
-    private static final int DEFAULT_ZOOM = 11;
+    private static final int DEFAULT_ZOOM = 10;
     private float default_lat = 15.9369587f; // Marie Galante
     private float default_lon = -61.301064f;
     private final int LOCATION_INTERVAL = 2000;
@@ -89,14 +98,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-
-        // Store default values as values
-        // TODO
+    protected void onCreate(Bundle savedInstanceState)
+    {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Force values
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -108,12 +116,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         // Check if we have Play Services for GCM
         if (checkPlayServices()) {
-            Log.i(TAG, "Play Services are NOT ok");
+            Log.i(TAG, "Play Services are OK");
             // Start IntentService to register this application with GCM.
             Intent intent = new Intent(this, RegistrationIntentService.class);
             startService(intent);
         } else {
-            Log.i(TAG, "Play Services are ok");
+            Log.i(TAG, "Play Services are NOT ok");
         }
 
         // Instantiate map
@@ -161,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Log.i(TAG, "Building Google API Client");
         buildGoogleApiClient();
 
-        // Retrieving sensor list
+        // Retrieve sensor list
         Log.i(TAG, "Retrieving Sensor list");
         getSensorList();
 
@@ -173,15 +181,14 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-    private void getSensorList() {
+    private void getSensorList()
+    {
 
-        JSONObject result = null;
         String api_url = sharedPref.getString("pref_sensor_api", "");
 
         if (api_url.equals("")) {
-            Log.i(TAG, "Bad sensor list API");
+            Log.i(TAG, "Bad sensor list URL");
         } else {
-
             AsyncHttpTask task = new AsyncHttpTask(new AsyncHttpTask.TaskListener() {
                 @Override
                 public void onFinished(JSONArray result) {
@@ -189,13 +196,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     updateMarkers(result);
                 }
             });
-
             task.execute(api_url);
         }
 
     }
 
-    private void updateMarkers(JSONArray sensors) {
+    private void updateMarkers(JSONArray sensors)
+    {
 
         IconFactory mIconFactory = IconFactory.getInstance(this);
         Drawable mIconDrawableDisabled = ContextCompat.getDrawable(this, R.drawable.map_grey);
@@ -211,9 +218,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 JSONObject place = sensors.getJSONObject(i);
                 String snippet = "No sensor associated";
 
-                if (place.getJSONArray("sensor_uids").length() > 0) {
-                    if (!place.getJSONArray("sensor_uids").get(0).toString().equals("null")) {
-                        snippet = place.getJSONArray("sensor_uids").get(0).toString();
+                JSONArray sensor_uids = place.getJSONArray("sensor_uids");
+                if (sensor_uids.length() > 0) {
+                    if (!sensor_uids.get(0).toString().equals("null")) {
+                        snippet = sensor_uids.get(0).toString();
                         icon = active_icon;
                     } else {
                         snippet = "No sensor associated";
@@ -234,7 +242,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-    private synchronized void buildGoogleApiClient() {
+    private synchronized void buildGoogleApiClient()
+    {
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -250,38 +259,44 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle item selection
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+
         switch (item.getItemId()) {
             case R.id.action_retry:
                 reconnect();
                 return true;
             case R.id.action_settings:
                 getFragmentManager().beginTransaction()
-                        .replace(android.R.id.content, new SettingsFragment())
-                        .addToBackStack("settings")
-                        .commit();
+                    .replace(android.R.id.content, new SettingsFragment())
+                    .addToBackStack("settings")
+                    .commit();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
-    public void reconnect(){
+    public void reconnect()
+    {
         Handler handler = new Handler();
         Runnable r = new Runnable() {
             public void run() {
                 Log.i(TAG, "Connecting MQTT Client");
-                mMQTTClient.reconnect(new CallbackInterface() {
-                    public void execute() {
-                        updateData();
+                mMQTTClient.reconnect(new MQTTCallbackInterface() {
+                    public void newMeasurement(JSONObject measurement) {
+                        updateMap();
+                    }
+                    public void alert(JSONObject alert) {
+                        showAlert();
                     }
                 });
             }
@@ -289,22 +304,28 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         handler.post(r);
     }
 
-    public void updateData() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-            mLastActive = new Date();
-            Log.i(TAG, "DATA UPDATED ! at " + mLastActive.toString());
-            }
-        });
+    public void updateMap()
+    {
+        updateLastActive();
+    }
+
+    public void showAlert()
+    {
+        updateLastActive();
+    }
+
+    public void updateLastActive()
+    {
+        mLastActive = new Date();
+        Log.i(TAG, "Data received at " + mLastActive.toString());
     }
 
     /*
     * Manages the back button in fragments stacks
     * */
     @Override
-    public void onBackPressed() {
-
+    public void onBackPressed()
+    {
         if (getFragmentManager().getBackStackEntryCount() > 0) {
             getFragmentManager().popBackStack();
             getFragmentManager().beginTransaction().commit();
@@ -314,18 +335,24 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void onResume() {
+    public void onResume()
+    {
         super.onResume();
         mapView.onResume();
         reconnect(); // Reconnect MQTT
+        // Within {@code onPause()}, we pause location updates, but leave the
+        // connection to GoogleApiClient intact.
+        startLocationUpdates();
 
     }
 
-
     @Override
-    public void onPause() {
+    public void onPause()
+    {
         super.onPause();
         mapView.onPause();
+        // Stop location updates to save battery, but don't disconnect the GoogleApiClient object.
+        stopLocationUpdates();
         if (mMQTTClient != null) {
             try {
                 mMQTTClient.disconnect();
@@ -336,32 +363,44 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    protected void onStop() {
+    protected void onStop()
+    {
         super.onStop();
         mapView.onStop();
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+        super.onStop();
     }
 
     @Override
-    protected void onStart() {
+    protected void onStart()
+    {
         super.onStart();
         mapView.onStart();
+        if (mGoogleApiClient != null && !mGoogleApiClient.isConnected() && !mGoogleApiClient.isConnecting()) {
+            mGoogleApiClient.connect();
+        }
     }
 
     @Override
-    protected void onDestroy() {
+    protected void onDestroy()
+    {
         super.onDestroy();
         mapView.onDestroy();
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(Bundle outState)
+    {
         super.onSaveInstanceState(outState);
         mapView.onSaveInstanceState(outState);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[], @NonNull int[] grantResults) {
+                                           @NonNull String permissions[], @NonNull int[] grantResults)
+    {
         switch (requestCode) {
             case REQUEST_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
@@ -376,7 +415,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
-    private void createLocationRequest() {
+    private void createLocationRequest()
+    {
         if (mLocationRequest == null) { // Do not recreate it
             mLocationRequest = new LocationRequest();
             mLocationRequest.setInterval(LOCATION_INTERVAL);
@@ -385,20 +425,23 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         }
     }
 
-    private void stopLocationUpdates() {
+    private void stopLocationUpdates()
+    {
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected() && isLocationPermissionGranted()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
         }
     }
 
-    private void startLocationUpdates() {
+    private void startLocationUpdates()
+    {
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected() && isLocationPermissionGranted()) {
             //noinspection ResourceType
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         }
     }
     @Override
-    public void onLocationChanged(Location location) {
+    public void onLocationChanged(Location location)
+    {
         // We can set the flag back to true since this method is only
         // called when we have a new "real" location
         mCurrentLocation = location;
@@ -412,7 +455,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
      * Runs when a GoogleApiClient object successfully connects.
      */
     @Override
-    public void onConnected(Bundle connectionHint) {
+    public void onConnected(Bundle connectionHint)
+    {
 
         // If the initial location was never previously requested, we use
         // FusedLocationApi.getLastLocation() to get it. If it was previously requested, we store
@@ -431,7 +475,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void onConnectionSuspended(int cause) {
+    public void onConnectionSuspended(int cause)
+    {
         // The connection to Google Play services was lost for some reason. We call connect() to
         // attempt to re-establish the connection.
         if (mGoogleApiClient != null) {
@@ -440,7 +485,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult result) {
+    public void onConnectionFailed(@NonNull ConnectionResult result)
+    {
         // Refer to the javadoc for ConnectionResult to see what error codes might be returned in
         // onConnectionFailed.
     }
@@ -450,7 +496,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
      * it doesn't, display a dialog that allows users to download the APK from
      * the Google Play Store or enable it in the device's system settings.
      */
-    private boolean checkPlayServices() {
+    private boolean checkPlayServices()
+    {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
         if (resultCode != ConnectionResult.SUCCESS) {

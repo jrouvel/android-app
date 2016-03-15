@@ -9,11 +9,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
-
 /**
- * Caribe Wave
- * Created by tchap on 28/12/15.
+ * Caribe Wave Android App
+ *
+ * Settings fragment
+ *
+ * Created by tchap on 14/03/16.
  */
 public class SettingsFragment extends PreferenceFragment {
     @Override

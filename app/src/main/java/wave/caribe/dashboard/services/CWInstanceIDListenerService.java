@@ -3,6 +3,13 @@ package wave.caribe.dashboard.services;
 import android.content.Intent;
 import com.google.android.gms.iid.InstanceIDListenerService;
 
+/**
+ * Caribe Wave Android App
+ *
+ * GCM Listener for notifications
+ *
+ * Created by tchap on 14/03/16.
+ */
 public class CWInstanceIDListenerService extends InstanceIDListenerService {
 
     /**
