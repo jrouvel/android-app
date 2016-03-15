@@ -1,7 +1,6 @@
 package wave.caribe.dashboard;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -16,12 +15,15 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.support.design.widget.FloatingActionButton;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -74,6 +76,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private final String LOCATION_FILTER_KEY = "location.request.caribe.wave";
 
     private MapView mapView = null;
+    private TextView msg;
+    private LinearLayout msgbox;
+
     private ArrayList<Sensor> sensors = new ArrayList<>();
     private ArrayList<Marker> listOfMarkers = new ArrayList<>();
 
@@ -171,6 +176,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         }
 
+        // Msg Box
+        msg = (TextView) findViewById(R.id.msg);
+        msgbox = (LinearLayout) findViewById(R.id.msgbox);
+        msg.setText(R.string.no_event);
+
         // Build the Google API client for location requests
         Log.i(TAG, "Building Google API Client");
         buildGoogleApiClient();
@@ -226,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     {
 
         Log.i(TAG, "Resetting markers.");
+        mapView.removeAllAnnotations();
         listOfMarkers.clear();
 
         IconFactory mIconFactory = IconFactory.getInstance(this);
@@ -235,8 +246,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Drawable mIconDrawableActive = ContextCompat.getDrawable(this, R.drawable.map_green);
         Icon active_icon = mIconFactory.fromDrawable(mIconDrawableActive);
 
-        for (int i = 0; i < sensors.size(); i++) {
-
+        for (int i = 0; i < sensors.size(); i++)
+        {
             listOfMarkers.add(
                 mapView.addMarker(new MarkerOptions()
                         .position(sensors.get(i).getLatLng())
@@ -299,7 +310,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     public void newMeasurement(String uid, JSONArray measurement) {
                         updateMap(uid, measurement);
                     }
-
                     public void alert(JSONObject alert) {
                         showAlert();
                     }
@@ -314,29 +324,45 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void updateMap(String uid, JSONArray measurement)
     {
         updateLastActive();
+        Log.i(TAG, "Updating map.");
+
+        final ArrayList<String> places = new ArrayList<>();
 
         IconFactory mIconFactory = IconFactory.getInstance(this);
         Drawable mIconDrawableDanger = ContextCompat.getDrawable(this, R.drawable.map_red);
         Icon danger_icon = mIconFactory.fromDrawable(mIconDrawableDanger);
 
-        for (Marker marker : listOfMarkers) {
+        for (final Marker marker : listOfMarkers) {
             if (marker.getSnippet().equals(uid)) {
+                places.add(marker.getTitle());
                 marker.setIcon(danger_icon);
                 mapView.removeMarker(marker);
-                listOfMarkers.remove(marker);
-                listOfMarkers.add(
-                        mapView.addMarker(new MarkerOptions()
-                                .position(marker.getPosition())
-                                .title(marker.getTitle())
-                                .icon(marker.getIcon())
-                                .snippet(marker.getSnippet())));
+                mapView.addMarker(new MarkerOptions()
+                        .position(marker.getPosition())
+                        .title(marker.getTitle())
+                        .icon(marker.getIcon())
+                        .snippet(marker.getSnippet()));
             }
         }
 
+        // Update msg box
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                msg.setText(String.format(getString(R.string.measurement_event), TextUtils.join(", ", places)));
+                msgbox.setBackgroundColor(getResources().getColor(R.color.warning));
+            }
+        });
         Log.i(TAG, "Map updated.");
 
         // Run for 2 seconds
-        
+        try {
+            Thread.sleep(2000);
+        } catch (Exception e){
+
+        }
+
+        resetStillMarkers();
 
     }
 
