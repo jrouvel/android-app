@@ -1,5 +1,6 @@
 package wave.caribe.dashboard.MQTT;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 /**
@@ -10,6 +11,6 @@ import org.json.JSONObject;
  * Created by tchap on 14/03/16.
  */
 public interface MQTTCallbackInterface {
-    void newMeasurement(JSONObject data);
+    void newMeasurement(String uid, JSONArray data);
     void alert(JSONObject data);
 }

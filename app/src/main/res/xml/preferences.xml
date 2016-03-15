@@ -17,11 +17,6 @@
             android:summary="The auth token"
             android:title="Authentification token"
             android:defaultValue="fautpasledire" />
-        <EditTextPreference
-            android:key="pref_client"
-            android:summary="The client name"
-            android:title="Client name"
-            android:defaultValue="android-client" />
     </PreferenceCategory>
     <PreferenceCategory
         android:title="Sensors API">
@@ -47,7 +42,7 @@
             android:key="pref_alert"
             android:summary="The alert endpoint"
             android:title="Sensor endpoint"
-            android:defaultValue="alert/alert" />
+            android:defaultValue="alert/general" />
     </PreferenceCategory>
 
 </PreferenceScreen>

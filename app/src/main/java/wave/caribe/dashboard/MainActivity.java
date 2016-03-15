@@ -1,6 +1,7 @@
 package wave.caribe.dashboard;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -22,7 +23,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.support.design.widget.FloatingActionButton;
 
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -34,10 +34,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.constants.MyBearingTracking;
 import com.mapbox.mapboxsdk.constants.MyLocationTracking;
@@ -47,6 +49,7 @@ import com.mapbox.mapboxsdk.views.MapView;
 
 import wave.caribe.dashboard.MQTT.MQTTCallbackInterface;
 import wave.caribe.dashboard.MQTT.MQTTClient;
+import wave.caribe.dashboard.model.Sensor;
 import wave.caribe.dashboard.services.AsyncHttpTask;
 import wave.caribe.dashboard.services.RegistrationIntentService;
 
@@ -71,6 +74,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private final String LOCATION_FILTER_KEY = "location.request.caribe.wave";
 
     private MapView mapView = null;
+    private ArrayList<Sensor> sensors = new ArrayList<>();
+    private ArrayList<Marker> listOfMarkers = new ArrayList<>();
 
     private static final int DEFAULT_ZOOM = 10;
     private float default_lat = 15.9369587f; // Marie Galante
@@ -132,6 +137,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mapView.setStyleUrl(Style.SATELLITE_STREETS);
         mapView.setCenterCoordinate(new LatLng(default_lat, default_lon));
         mapView.setZoomLevel(DEFAULT_ZOOM);
+        mapView.setRotateEnabled(false);
         mapView.onCreate(savedInstanceState);
 
         if (this.isLocationPermissionGranted()) {
@@ -192,8 +198,23 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             AsyncHttpTask task = new AsyncHttpTask(new AsyncHttpTask.TaskListener() {
                 @Override
                 public void onFinished(JSONArray result) {
-                    //Log.i(TAG, result.toString());
-                    updateMarkers(result);
+                    // Translate to sensor ArrayList
+                    Sensor current;
+                    for (int i = 0; i < result.length(); i++) {
+                        try {
+
+                            JSONObject place = result.getJSONObject(i);
+                            JSONArray sensor_uids = place.getJSONArray("sensor_uids");
+                            if (sensor_uids.length() > 0 && !sensor_uids.get(0).toString().equals("null")) {
+                                current = new Sensor(sensor_uids.get(0).toString(), place.getString("name"), new LatLng(Double.parseDouble(place.getString("lat")), Double.parseDouble(place.getString("lon"))));
+                            } else {
+                                current = new Sensor(null,place.getString("name"), new LatLng(Double.parseDouble(place.getString("lat")), Double.parseDouble(place.getString("lon"))));
+                            }
+                            sensors.add(current);
+
+                        } catch(JSONException e) {}
+                    }
+                    resetStillMarkers();
                 }
             });
             task.execute(api_url);
@@ -201,8 +222,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-    private void updateMarkers(JSONArray sensors)
+    private void resetStillMarkers()
     {
+
+        Log.i(TAG, "Resetting markers.");
+        listOfMarkers.clear();
 
         IconFactory mIconFactory = IconFactory.getInstance(this);
         Drawable mIconDrawableDisabled = ContextCompat.getDrawable(this, R.drawable.map_grey);
@@ -211,40 +235,20 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Drawable mIconDrawableActive = ContextCompat.getDrawable(this, R.drawable.map_green);
         Icon active_icon = mIconFactory.fromDrawable(mIconDrawableActive);
 
-        Icon icon = disabled_icon;
+        for (int i = 0; i < sensors.size(); i++) {
 
-        for (int i = 0; i < sensors.length(); i++) {
-            try {
-                JSONObject place = sensors.getJSONObject(i);
-                String snippet = "No sensor associated";
-
-                JSONArray sensor_uids = place.getJSONArray("sensor_uids");
-                if (sensor_uids.length() > 0) {
-                    if (!sensor_uids.get(0).toString().equals("null")) {
-                        snippet = sensor_uids.get(0).toString();
-                        icon = active_icon;
-                    } else {
-                        snippet = "No sensor associated";
-                        icon = disabled_icon;
-                    }
-                }
-
+            listOfMarkers.add(
                 mapView.addMarker(new MarkerOptions()
-                        .position(new LatLng(Double.parseDouble(place.getString("lat")), Double.parseDouble(place.getString("lon"))))
-                        .title(place.getString("name"))
-                        .icon(icon)
-                        .snippet(snippet));
-
-            } catch(JSONException e) {
-
-            }
+                        .position(sensors.get(i).getLatLng())
+                        .title(sensors.get(i).getName())
+                        .icon(sensors.get(i).hasUid() ? active_icon : disabled_icon)
+                        .snippet(sensors.get(i).getUid())));
         }
 
     }
 
     private synchronized void buildGoogleApiClient()
     {
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -255,7 +259,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         if (isLocationPermissionGranted()) {
             createLocationRequest();
         }
-
     }
 
     @Override
@@ -289,24 +292,52 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     {
         Handler handler = new Handler();
         Runnable r = new Runnable() {
+            @Override
             public void run() {
                 Log.i(TAG, "Connecting MQTT Client");
                 mMQTTClient.reconnect(new MQTTCallbackInterface() {
-                    public void newMeasurement(JSONObject measurement) {
-                        updateMap();
+                    public void newMeasurement(String uid, JSONArray measurement) {
+                        updateMap(uid, measurement);
                     }
+
                     public void alert(JSONObject alert) {
                         showAlert();
                     }
                 });
             }
         };
+
         handler.post(r);
+
     }
 
-    public void updateMap()
+    public void updateMap(String uid, JSONArray measurement)
     {
         updateLastActive();
+
+        IconFactory mIconFactory = IconFactory.getInstance(this);
+        Drawable mIconDrawableDanger = ContextCompat.getDrawable(this, R.drawable.map_red);
+        Icon danger_icon = mIconFactory.fromDrawable(mIconDrawableDanger);
+
+        for (Marker marker : listOfMarkers) {
+            if (marker.getSnippet().equals(uid)) {
+                marker.setIcon(danger_icon);
+                mapView.removeMarker(marker);
+                listOfMarkers.remove(marker);
+                listOfMarkers.add(
+                        mapView.addMarker(new MarkerOptions()
+                                .position(marker.getPosition())
+                                .title(marker.getTitle())
+                                .icon(marker.getIcon())
+                                .snippet(marker.getSnippet())));
+            }
+        }
+
+        Log.i(TAG, "Map updated.");
+
+        // Run for 2 seconds
+        
+
     }
 
     public void showAlert()
@@ -317,7 +348,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void updateLastActive()
     {
         mLastActive = new Date();
-        Log.i(TAG, "Data received at " + mLastActive.toString());
+        //Log.i(TAG, "Data received at " + mLastActive.toString());
     }
 
     /*

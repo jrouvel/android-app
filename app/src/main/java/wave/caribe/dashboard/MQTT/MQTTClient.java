@@ -19,7 +19,10 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.StringTokenizer;
 
 import wave.caribe.dashboard.MainActivity;
 
@@ -52,7 +55,7 @@ public class MQTTClient implements MqttCallback {
      */
     @Override
     public void connectionLost(Throwable t) {
-        Log.i(TAG, "Connection LOST, reconnecting");
+        Log.i(TAG, "Connection LOST, reconnecting : " + t);
         // Wait 5 secs before reconnecting
         try {
             Thread.sleep(5000);
@@ -85,17 +88,15 @@ public class MQTTClient implements MqttCallback {
      */
     @Override
     public void messageArrived(String topic, MqttMessage message) throws Exception {
-
-        Log.i(TAG, "-------------------------------------------------");
-        Log.i(TAG, "| Topic:" + topic);
-        Log.i(TAG, "| Message: " + new String(message.getPayload()));
-        Log.i(TAG, "-------------------------------------------------");
-
         if(mCallbackInterface != null) {
             if (topic.equals("alert")) {
                 mCallbackInterface.alert(new JSONObject(new String(message.getPayload())));
-            } else if (topic.equals("measurement/")) {
-                mCallbackInterface.newMeasurement(new JSONObject(new String(message.getPayload())));
+            } else if (topic.startsWith("measurement/")) {
+                StringTokenizer tokens = new StringTokenizer(topic, "/");
+                tokens.nextElement(); // skip first element
+                String uid = tokens.nextElement().toString();
+                Log.i(TAG, "New Measurement for " + uid + " : " + new String(message.getPayload()));
+                mCallbackInterface.newMeasurement(uid, new JSONArray(new String(message.getPayload())));
             }
         }
     }
@@ -134,7 +135,7 @@ public class MQTTClient implements MqttCallback {
         connOpt.setPassword(sharedPref.getString("pref_token", "").toCharArray());
 
         // Connect to Broker
-        mClient = new MqttClient(sharedPref.getString("pref_url", "") + ":" + sharedPref.getString("pref_port", "1883"), sharedPref.getString("pref_client", ""), new MemoryPersistence());
+        mClient = new MqttClient(sharedPref.getString("pref_url", "") + ":" + sharedPref.getString("pref_port", "1883"), android_id + "_client", new MemoryPersistence());
         mClient.setCallback(this);
         mClient.connect(connOpt);
         Log.i(TAG, "Connected to " + sharedPref.getString("pref_url", ""));
@@ -143,7 +144,7 @@ public class MQTTClient implements MqttCallback {
 
     public void reconnect(MQTTCallbackInterface ci) {
         try {
-            disconnect();
+            //disconnect();
             connect();
             subscribeToAll(ci);
         } catch (MqttException e) {
