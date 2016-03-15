@@ -1,0 +1,43 @@
+{
+  "project_info": {
+    "project_id": "caribe-wave",
+    "project_number": "553667159913",
+    "name": "Caribe Wave"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:553667159913:android:3e667c1b3a1662f5",
+        "client_id": "android:wave.caribe.dashboard",
+        "client_type": 1,
+        "android_client_info": {
+          "package_name": "wave.caribe.dashboard",
+          "certificate_hash": []
+        }
+      },
+      "oauth_client": [],
+      "api_key": [],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "cloud_messaging_service": {
+          "status": 2,
+          "apns_config": []
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "google_signin_service": {
+          "status": 1
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "client_info": [],
+  "ARTIFACT_VERSION": "1"
+}

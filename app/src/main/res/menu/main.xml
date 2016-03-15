@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="wave.caribe.dashboard.MainActivity">
+
+    <item android:id="@+id/action_settings"
+        android:title="@string/action_settings"
+        android:icon="@drawable/ic_settings_applications_white"
+        app:showAsAction="always" />
+
+    <item android:id="@+id/action_retry"
+        android:title="@string/action_retry"
+        android:icon="@drawable/ic_autorenew_white"
+        app:showAsAction="never" />
+</menu>

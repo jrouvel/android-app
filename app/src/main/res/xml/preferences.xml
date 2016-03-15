@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="MQTT">
+        <EditTextPreference
+            android:key="pref_url"
+            android:title="Broker URL"
+            android:summary="Indicate the broker url"
+            android:defaultValue="tcp://178.79.136.123" />
+        <EditTextPreference
+            android:key="pref_port"
+            android:title="Broker port"
+            android:summary="Indicate the port used for connecting to MQTT"
+            android:defaultValue="1883" />
+        <EditTextPreference
+            android:key="pref_token"
+            android:summary="The auth token"
+            android:title="Authentification token"
+            android:defaultValue="fautpasledire" />
+        <EditTextPreference
+            android:key="pref_client"
+            android:summary="The client name"
+            android:title="Client name"
+            android:defaultValue="android-client" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Sensors API">
+        <EditTextPreference
+            android:key="pref_api"
+            android:summary="The sensor api from which we retrieve geolocation"
+            android:title="Sensors API"
+            android:defaultValue="https://caribe.ants.builders/allPlacesInfos" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Endpoints">
+        <EditTextPreference
+            android:key="pref_data"
+            android:summary="The sensor endpoint"
+            android:title="Measurements endpoint"
+            android:defaultValue="measurement/#" />
+        <EditTextPreference
+            android:key="pref_alert"
+            android:summary="The alert endpoint"
+            android:title="Sensor endpoint"
+            android:defaultValue="alert/alert" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
