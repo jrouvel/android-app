@@ -239,6 +239,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mapView.removeAllAnnotations();
         listOfMarkers.clear();
 
+        msg.setText(R.string.no_event);
+        msgbox.setBackgroundColor(getResources().getColor(R.color.safe));
+        
         IconFactory mIconFactory = IconFactory.getInstance(this);
         Drawable mIconDrawableDisabled = ContextCompat.getDrawable(this, R.drawable.map_grey);
         Icon disabled_icon = mIconFactory.fromDrawable(mIconDrawableDisabled);
