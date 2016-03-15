@@ -148,10 +148,12 @@ public class MQTTClient implements MqttCallback {
 
     public void disconnect() {
         // disconnect
-        try {
-            mClient.disconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (mClient != null) {
+            try {
+                mClient.disconnect();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -12,6 +12,8 @@ import android.util.Log;
 
 import com.google.android.gms.gcm.GcmListenerService;
 
+import java.util.Set;
+
 import wave.caribe.dashboard.MainActivity;
 import wave.caribe.dashboard.R;
 
@@ -21,28 +23,9 @@ public class CWGcmListenerService extends GcmListenerService {
 
     @Override
     public void onMessageReceived(String from, Bundle data) {
-        String message = data.getString("message");
-        Log.i(TAG, "From: " + from);
-        Log.i(TAG, "Message: " + message);
-
-        if (from.startsWith("/topics/")) {
-            // message received from some topic.
-        } else {
-            // normal downstream message.
-        }
-
+        String message = data.getString("default");
+        Log.i(TAG, "GCM Message received : " + message);
         // [START_EXCLUDE]
-        /**
-         * Production applications would usually process the message here.
-         * Eg: - Syncing with server.
-         *     - Store message in local database.
-         *     - Update UI.
-         */
-
-        /**
-         * In some cases it may be useful to show a notification indicating to the user
-         * that a message was received.
-         */
         sendNotification(message);
         // [END_EXCLUDE]
     }
@@ -61,8 +44,8 @@ public class CWGcmListenerService extends GcmListenerService {
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.mipmap.icon)
-                .setContentTitle("GCM Message")
+                .setSmallIcon(R.drawable.notification_icon)
+                .setContentTitle(getString(R.string.alert_title))
                 .setContentText(message)
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)

@@ -29,12 +29,12 @@
             android:key="pref_sensor_api"
             android:summary="The sensor api from which we retrieve geolocation"
             android:title="Sensors API"
-            android:defaultValue="https://caribe.ants.builders/allPlacesInfos" />
+            android:defaultValue="http://caribe.ants.builders/allPlacesInfos" />
         <EditTextPreference
             android:key="pref_register_api"
             android:summary="The registering API for GCM token"
             android:title="GCM Registering API"
-            android:defaultValue="https://caribe.ants.builders/allPlacesInfos" />
+            android:defaultValue="https://0xhegrt40i.execute-api.us-west-2.amazonaws.com/dev/register_token" />
     </PreferenceCategory>
     <PreferenceCategory
         android:title="Endpoints">

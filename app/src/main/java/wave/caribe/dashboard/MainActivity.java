@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,7 +20,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 import android.support.design.widget.FloatingActionButton;
 
 
@@ -30,18 +30,14 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import org.eclipse.paho.client.mqttv3.MqttException;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
 
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.constants.MyBearingTracking;
 import com.mapbox.mapboxsdk.constants.MyLocationTracking;
@@ -49,6 +45,7 @@ import com.mapbox.mapboxsdk.constants.Style;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.views.MapView;
 
+import wave.caribe.dashboard.services.AsyncHttpTask;
 import wave.caribe.dashboard.services.RegistrationIntentService;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
@@ -94,9 +91,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
+        // Store default values as values
+        // TODO
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Request fine location (Android > 6.0)
@@ -172,48 +173,64 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-    private JSONObject getSensorList() {
+    private void getSensorList() {
 
         JSONObject result = null;
         String api_url = sharedPref.getString("pref_sensor_api", "");
 
         if (api_url.equals("")) {
             Log.i(TAG, "Bad sensor list API");
-            return null;
+        } else {
+
+            AsyncHttpTask task = new AsyncHttpTask(new AsyncHttpTask.TaskListener() {
+                @Override
+                public void onFinished(JSONArray result) {
+                    //Log.i(TAG, result.toString());
+                    updateMarkers(result);
+                }
+            });
+
+            task.execute(api_url);
         }
 
-        try {
-            URL url = new URL(api_url);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            try {
-                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-
-                BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                StringBuilder responseStrBuilder = new StringBuilder();
-
-                String inputStr;
-                while ((inputStr = streamReader.readLine()) != null)
-                    responseStrBuilder.append(inputStr);
-
-                result = new JSONObject(responseStrBuilder.toString());
-                Log.i(TAG, "Got result from Sensor list API");
-
-            } finally {
-                urlConnection.disconnect();
-            }
-        } catch (Exception e) {
-
-        }
-
-        return result;
     }
 
-    private void updateMarkers(ArrayList sensors) {
+    private void updateMarkers(JSONArray sensors) {
 
-        mapView.addMarker(new MarkerOptions()
-                .position(new LatLng(default_lat, default_lon))
-                .title("Hello World!")
-                .snippet("Welcome to my marker."));
+        IconFactory mIconFactory = IconFactory.getInstance(this);
+        Drawable mIconDrawableDisabled = ContextCompat.getDrawable(this, R.drawable.map_grey);
+        Icon disabled_icon = mIconFactory.fromDrawable(mIconDrawableDisabled);
+
+        Drawable mIconDrawableActive = ContextCompat.getDrawable(this, R.drawable.map_green);
+        Icon active_icon = mIconFactory.fromDrawable(mIconDrawableActive);
+
+        Icon icon = disabled_icon;
+
+        for (int i = 0; i < sensors.length(); i++) {
+            try {
+                JSONObject place = sensors.getJSONObject(i);
+                String snippet = "No sensor associated";
+
+                if (place.getJSONArray("sensor_uids").length() > 0) {
+                    if (!place.getJSONArray("sensor_uids").get(0).toString().equals("null")) {
+                        snippet = place.getJSONArray("sensor_uids").get(0).toString();
+                        icon = active_icon;
+                    } else {
+                        snippet = "No sensor associated";
+                        icon = disabled_icon;
+                    }
+                }
+
+                mapView.addMarker(new MarkerOptions()
+                        .position(new LatLng(Double.parseDouble(place.getString("lat")), Double.parseDouble(place.getString("lon"))))
+                        .title(place.getString("name"))
+                        .icon(icon)
+                        .snippet(snippet));
+
+            } catch(JSONException e) {
+
+            }
+        }
 
     }
 

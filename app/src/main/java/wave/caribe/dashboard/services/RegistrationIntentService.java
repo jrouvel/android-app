@@ -11,13 +11,21 @@ import com.google.android.gms.gcm.GcmPubSub;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.iid.InstanceID;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import wave.caribe.dashboard.MainActivity;
 import wave.caribe.dashboard.R;
@@ -51,7 +59,7 @@ public class RegistrationIntentService extends IntentService {
             Log.i(TAG, "GCM Registration Token: " + token);
 
             boolean reg_sent = sharedPref.getBoolean(MainActivity.SENT_TOKEN_TO_SERVER, false);
-            Log.i(TAG, "Token already sent ?  " + reg_sent);
+            Log.i(TAG, "Token already sent ? " + reg_sent);
             if (!reg_sent) {
                 boolean result = sendRegistrationToServer(token);
 
@@ -98,38 +106,76 @@ public class RegistrationIntentService extends IntentService {
             return false;
         }
 
+        InputStream inputStream = null;
+        HttpURLConnection urlConnection = null;
+        Integer result = 0;
         try {
-            Log.i(TAG, "Sending Token to endpoint " + reg_url);
-            URL url = new URL(reg_url + token);
-            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-            try {
-                InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+                /* forming th java.net.URL object */
+            URL url = new URL(reg_url);
+            DataOutputStream printout;
+            DataInputStream input;
+            urlConnection = (HttpURLConnection) url.openConnection();
 
-                BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-                StringBuilder responseStrBuilder = new StringBuilder();
 
-                String inputStr;
-                while ((inputStr = streamReader.readLine()) != null)
-                    responseStrBuilder.append(inputStr);
+            urlConnection.setDoInput(true);
+            urlConnection.setDoOutput(true);
+            urlConnection.setUseCaches(false);
+            urlConnection.setRequestProperty("Content-Type","application/json");
+            urlConnection.setRequestProperty("Content-Type", "application/json");
+            urlConnection.setRequestProperty("Accept", "application/json");
+            urlConnection.setRequestMethod("POST");
+            urlConnection.setRequestProperty("charset", "utf-8");
+            urlConnection.connect();
+            //Create JSONObject here
+            JSONObject jsonParam = new JSONObject();
+            jsonParam.put("token", token);
 
-                String result = responseStrBuilder.toString();
-                if (result.equals("OK")){
-                    Log.i(TAG, "OK From register server");
-                    return true;
-                } else {
+            printout = new DataOutputStream(urlConnection.getOutputStream ());
+            printout.writeBytes(jsonParam.toString());
+            printout.flush ();
+            printout.close ();
+
+            int statusCode = urlConnection.getResponseCode();
+
+                /* 200 represents HTTP OK */
+            if (statusCode ==  200) {
+                inputStream = new BufferedInputStream(urlConnection.getInputStream());
+                String response = convertInputStreamToString(inputStream);
+
+                try {
+                    JSONObject rep = new JSONObject(response);
+                    if (rep.get("status").equals("ok")) {
+                        Log.i(TAG, "OK From register server");
+                        return true;
+                    }
+                } catch (JSONException e){
+                    e.printStackTrace();
                     Log.i(TAG, "Bad response from register server");
                     return false;
                 }
 
-            } finally {
-                urlConnection.disconnect();
             }
         } catch (Exception e) {
-
+            Log.d(TAG, e.getLocalizedMessage());
         }
 
         Log.i(TAG, "Impossible to connect to token endpoint");
         return false;
+    }
+
+    private String convertInputStreamToString(InputStream inputStream) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
+        String line = "";
+        String result = "";
+        while((line = bufferedReader.readLine()) != null){
+            result += line;
+        }
+
+        /* Close Stream */
+        if(null!=inputStream){
+            inputStream.close();
+        }
+        return result;
     }
 
     /**
