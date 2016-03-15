@@ -5,4 +5,7 @@
     <string name="action_settings">Settings</string>
     <string name="action_validate">Validate</string>
     <string name="alert_title">Caribe Wave Alert</string>
+
+    <string name="no_event">No specific event in your area</string>
+    <string name="measurement_event">Warning : Event in %s</string>
 </resources>
