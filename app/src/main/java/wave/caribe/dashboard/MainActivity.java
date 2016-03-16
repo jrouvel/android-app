@@ -42,6 +42,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -402,12 +403,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         IconFactory mIconFactory = IconFactory.getInstance(this);
         Drawable mIconDrawableDanger = ContextCompat.getDrawable(this, R.drawable.map_yellow);
-        Icon danger_icon = mIconFactory.fromDrawable(mIconDrawableDanger);
+        Icon warning_icon = mIconFactory.fromDrawable(mIconDrawableDanger);
 
         for (final Marker marker : listOfMarkers) {
             if (marker.getSnippet().equals(uid)) {
                 places.add(marker.getTitle());
-                marker.setIcon(danger_icon);
+                marker.setIcon(warning_icon);
                 mapView.removeMarker(marker);
                 mapView.addMarker(new MarkerOptions()
                         .position(marker.getPosition())
@@ -443,12 +444,32 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void showAlert(JSONObject alert)
     {
         String tmp;
+        JSONArray sensor_uids = new JSONArray();
+        List<String> uids_list = new ArrayList<>();
         updateLastActive();
 
         try {
             tmp = alert.get("message").toString();
+            sensor_uids = (JSONArray) alert.get("sensor_uids");
+            for (int i = 0; i < sensor_uids.length();uids_list.add(sensor_uids.get(i++).toString()));
         } catch(Exception e) {
             tmp = getString(R.string.general_alert);
+        }
+
+        IconFactory mIconFactory = IconFactory.getInstance(this);
+        Drawable mIconDrawableDanger = ContextCompat.getDrawable(this, R.drawable.map_red);
+        Icon danger_icon = mIconFactory.fromDrawable(mIconDrawableDanger);
+
+        for (final Marker marker : listOfMarkers) {
+            if (uids_list.contains(marker.getSnippet())) {
+                marker.setIcon(danger_icon);
+                mapView.removeMarker(marker);
+                mapView.addMarker(new MarkerOptions()
+                        .position(marker.getPosition())
+                        .title(marker.getTitle())
+                        .icon(marker.getIcon())
+                        .snippet(marker.getSnippet()));
+            }
         }
 
         final String message = tmp;
