@@ -29,7 +29,7 @@
             android:key="pref_register_api"
             android:summary="The registering API for GCM token"
             android:title="GCM Registering API"
-            android:defaultValue="https://0xhegrt40i.execute-api.us-west-2.amazonaws.com/dev/register_token" />
+            android:defaultValue="http://alerter.ants.builders/app/register_token" />
     </PreferenceCategory>
     <PreferenceCategory
         android:title="Endpoints">

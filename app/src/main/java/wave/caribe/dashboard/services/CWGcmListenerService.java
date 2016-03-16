@@ -53,7 +53,7 @@ public class CWGcmListenerService extends GcmListenerService {
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.notification_icon)
-                .setContentTitle(getString(R.string.alert_title))
+                .setContentTitle(getString(R.string.alert_title) + " — " + android.text.format.DateFormat.format("dd/MM/yy hh:mm:ss", new java.util.Date()))
                 .setContentText(message)
                 .setColor(getResources().getColor(R.color.primary))
                 .setAutoCancel(true)

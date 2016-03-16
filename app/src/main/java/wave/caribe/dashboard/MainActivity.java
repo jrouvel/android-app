@@ -1,11 +1,14 @@
 package wave.caribe.dashboard;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -24,6 +27,7 @@ import android.view.View;
 import android.support.design.widget.FloatingActionButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -115,6 +119,28 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 REQUEST_LOCATION);
     }
 
+    public boolean isLocationServiceEnabled() {
+        LocationManager locationManager = null;
+        boolean gps_enabled= false,network_enabled = false;
+
+        if(locationManager ==null)
+            locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        try{
+            gps_enabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        }catch(Exception ex){
+            //do nothing...
+        }
+
+        try{
+            network_enabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        }catch(Exception ex){
+            //do nothing...
+        }
+
+        return gps_enabled || network_enabled;
+
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -122,8 +148,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Force values
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        // Force values (we hide the preference screen for now)
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, true);
+
         sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Request fine location (Android > 6.0)
@@ -153,7 +180,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         mapView.setRotateEnabled(false);
         mapView.onCreate(savedInstanceState);
 
-        if (this.isLocationPermissionGranted()) {
+        FloatingActionButton mLocationButton = (FloatingActionButton) findViewById(R.id.location);
+
+        if (isLocationPermissionGranted() && isLocationServiceEnabled()) {
             //noinspection ResourceType
             mapView.setMyLocationEnabled(true);
             //noinspection ResourceType
@@ -173,15 +202,26 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 }
             });
 
-            FloatingActionButton mLocationButton = (FloatingActionButton) findViewById(R.id.location);
             mLocationButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     // Toggle GPS position updates
-                    mapView.setCenterCoordinate(new LatLng(mCurrentLocation));
+                    if (mCurrentLocation != null) {
+                        mapView.setCenterCoordinate(new LatLng(mCurrentLocation));
+                    }
                 }
             });
+            mLocationButton.setVisibility(View.VISIBLE);
 
+        } else if (isLocationPermissionGranted()) {
+            mLocationButton.setVisibility(View.VISIBLE);
+            mLocationButton.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.text)));
+            mLocationButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Toast.makeText(getApplicationContext(), R.string.error_location, Toast.LENGTH_LONG).show();
+                }
+            });
         }
 
         // Msg Box
@@ -303,6 +343,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         switch (item.getItemId()) {
             case R.id.action_retry:
+                Toast.makeText(getApplicationContext(), R.string.msg_reconnecting, Toast.LENGTH_LONG).show();
+
+                // Retrieve sensor list
+                Log.i(TAG, "Retrieving Sensor list");
+                getSensorList();
+                Log.i(TAG, "Reconnecting MQTT");
                 reconnect();
                 return true;
             case R.id.action_settings:
@@ -396,13 +442,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     public void showAlert(JSONObject alert)
     {
-        String tmp = "General Alert — General Alert";
+        String tmp;
         updateLastActive();
 
         try {
             tmp = alert.get("message").toString();
         } catch(Exception e) {
-            tmp = "";
+            tmp = getString(R.string.general_alert);
         }
 
         final String message = tmp;

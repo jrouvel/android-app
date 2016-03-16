@@ -8,4 +8,8 @@
 
     <string name="no_event">No specific event in your area</string>
     <string name="measurement_event">Warning : Event in %s</string>
+
+    <string name="error_location">Please enable Location Services and restart the app to access your location</string>
+    <string name="msg_reconnecting">Reconnecting ...</string>
+    <string name="general_alert">General Alert — General Alert</string>
 </resources>
