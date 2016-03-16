@@ -19,6 +19,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.client.mqttv3.persist.MqttDefaultFilePersistence;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -135,8 +136,11 @@ public class MQTTClient implements MqttCallback {
         connOpt.setUserName(android_id);
         connOpt.setPassword(sharedPref.getString("pref_token", "").toCharArray());
 
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        MqttDefaultFilePersistence dataStore = new MqttDefaultFilePersistence(tmpDir);
+
         // Connect to Broker
-        mClient = new MqttClient(sharedPref.getString("pref_url", "") + ":" + sharedPref.getString("pref_port", "1883"), android_id + "_client", new MemoryPersistence());
+        mClient = new MqttClient(sharedPref.getString("pref_url", "") + ":" + sharedPref.getString("pref_port", "1883"), android_id + "_client", dataStore);
         mClient.setCallback(this);
         mClient.connect(connOpt);
         Log.i(TAG, "Connected to " + sharedPref.getString("pref_url", ""));
