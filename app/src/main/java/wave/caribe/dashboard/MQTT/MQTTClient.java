@@ -105,7 +105,7 @@ public class MQTTClient implements MqttCallback {
     public void subscribeToAll(MQTTCallbackInterface ci){
 
         // setup topic
-        int subQoS = 2;
+        int subQoS = 1;
 
         try {
             if (sharedPref.getString("pref_data", "").length() > 1) {
