@@ -43,8 +43,13 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.HashSet;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
@@ -109,6 +114,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public static final String SENT_TOKEN_TO_SERVER = "sentTokenToServer";
     public static final String REGISTRATION_COMPLETE = "registrationComplete";
 
+    //Threading
+    private ExecutorService executorService;
+    private Set<Callable<Boolean>> callables;
+
     // Do we have location permissions or not ?
     public boolean isLocationPermissionGranted() {
         return ContextCompat.checkSelfPermission(this,
@@ -170,73 +179,117 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             Log.i(TAG, "Play Services are NOT ok");
         }
 
-        // Instantiate map
-        Log.i(TAG, "Instantiating map");
-        mapView = (MapView) findViewById(R.id.map);
-        mapView.setAccessToken(getString(R.string.mapbox_id));
-
-        mapView.setStyleUrl("mapbox://styles/anthill/ciltunikq00eya2kq6s5nk85k");
-        mapView.setCenterCoordinate(new LatLng(default_lat, default_lon));
-        mapView.setZoomLevel(DEFAULT_ZOOM);
-        mapView.setRotateEnabled(false);
-        mapView.onCreate(savedInstanceState);
-
-        FloatingActionButton mLocationButton = (FloatingActionButton) findViewById(R.id.location);
-
-        if (isLocationPermissionGranted() && isLocationServiceEnabled()) {
-            //noinspection ResourceType
-            mapView.setMyLocationEnabled(true);
-            //noinspection ResourceType
-            mapView.setMyLocationTrackingMode(MyLocationTracking.TRACKING_NONE);
-            //noinspection ResourceType
-            mapView.setMyBearingTrackingMode(MyBearingTracking.GPS);
+        //Handling tasks dispatching across 3 threads
+        executorService = Executors.newFixedThreadPool(3);
+        callables = new HashSet<Callable<Boolean>>();
 
 
-            mapView.setOnMyLocationChangeListener(new MapView.OnMyLocationChangeListener() {
-                @Override
-                public void onMyLocationChange(@Nullable Location location) {
-                    if (location != null) {
-                        mapView.setZoomLevel(DEFAULT_ZOOM);
-                        mapView.setCenterCoordinate(new LatLng(location));
-                        mapView.setOnMyLocationChangeListener(null);
-                    }
+        callables.add(new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                
+                // Instantiate map
+                Log.i(TAG, "Instantiating map");
+                mapView = (MapView) findViewById(R.id.map);
+                mapView.setAccessToken(getString(R.string.mapbox_id));
+
+                mapView.setStyleUrl("mapbox://styles/anthill/ciltunikq00eya2kq6s5nk85k");
+                mapView.setCenterCoordinate(new LatLng(default_lat, default_lon));
+                mapView.setZoomLevel(DEFAULT_ZOOM);
+                mapView.setRotateEnabled(false);
+                mapView.onCreate(savedInstanceState);
+
+                FloatingActionButton mLocationButton = (FloatingActionButton) findViewById(R.id.location);
+
+                if (isLocationPermissionGranted() && isLocationServiceEnabled()) {
+                    //noinspection ResourceType
+                    mapView.setMyLocationEnabled(true);
+                    //noinspection ResourceType
+                    mapView.setMyLocationTrackingMode(MyLocationTracking.TRACKING_NONE);
+                    //noinspection ResourceType
+                    mapView.setMyBearingTrackingMode(MyBearingTracking.GPS);
+
+
+                    mapView.setOnMyLocationChangeListener(new MapView.OnMyLocationChangeListener() {
+                        @Override
+                        public void onMyLocationChange(@Nullable Location location) {
+                            if (location != null) {
+                                mapView.setZoomLevel(DEFAULT_ZOOM);
+                                mapView.setCenterCoordinate(new LatLng(location));
+                                mapView.setOnMyLocationChangeListener(null);
+                            }
+                        }
+                    });
+
+                    mLocationButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            // Toggle GPS position updates
+                            if (mCurrentLocation != null) {
+                                mapView.setCenterCoordinate(new LatLng(mCurrentLocation));
+                            }
+                        }
+                    });
+                    mLocationButton.setVisibility(View.VISIBLE);
+
+                } else if (isLocationPermissionGranted()) {
+                    mLocationButton.setVisibility(View.VISIBLE);
+                    mLocationButton.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.text)));
+                    mLocationButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Toast.makeText(getApplicationContext(), R.string.error_location, Toast.LENGTH_LONG).show();
+                        }
+                    });
                 }
-            });
 
-            mLocationButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    // Toggle GPS position updates
-                    if (mCurrentLocation != null) {
-                        mapView.setCenterCoordinate(new LatLng(mCurrentLocation));
-                    }
-                }
-            });
-            mLocationButton.setVisibility(View.VISIBLE);
+                // Msg Box
+                msg = (TextView) findViewById(R.id.msg);
+                msgbox = (LinearLayout) findViewById(R.id.msgbox);
+                msg.setText(R.string.no_event);
 
-        } else if (isLocationPermissionGranted()) {
-            mLocationButton.setVisibility(View.VISIBLE);
-            mLocationButton.setBackgroundTintList(ColorStateList.valueOf(getResources().getColor(R.color.text)));
-            mLocationButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Toast.makeText(getApplicationContext(), R.string.error_location, Toast.LENGTH_LONG).show();
-                }
-            });
+                return true;
+
+
+            }
+        });
+
+
+        callables.add(new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                // Build the Google API client for location requests
+                Log.i(TAG, "Building Google API Client");
+                buildGoogleApiClient();
+                return true;
+            }
+        });
+
+
+        callables.add(new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                // Retrieve sensor list
+                Log.i(TAG, "Retrieving Sensor list");
+                getSensorList();
+                return true;
+            }
+        });
+
+        try {
+            
+            List<Future<Boolean>> futures = executorService.invokeAll(callables);
+
+        }
+        catch (Exception e) {}
+        finally {
+
+            executorService.shutdown();
+            executorService = null;
+
         }
 
-        // Msg Box
-        msg = (TextView) findViewById(R.id.msg);
-        msgbox = (LinearLayout) findViewById(R.id.msgbox);
-        msg.setText(R.string.no_event);
+        
 
-        // Build the Google API client for location requests
-        Log.i(TAG, "Building Google API Client");
-        buildGoogleApiClient();
+        
 
-        // Retrieve sensor list
-        Log.i(TAG, "Retrieving Sensor list");
-        getSensorList();
 
         // Build the MQTT Client
         Log.i(TAG, "Creating MQTT Client");
